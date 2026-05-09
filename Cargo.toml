@@ -6,4 +6,5 @@ description = "Zero-copy data structures for Open-Cognitive OS"
 
 [dependencies]
 # Serileştirme gerektirmeyen veri paketlemesi için
-bytemuck = "1.14"
+# Derive makrolarını aktif ettik
+bytemuck = { version = "1.25.0", features = ["derive"] }
