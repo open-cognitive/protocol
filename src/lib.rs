@@ -16,6 +16,7 @@ pub const DTYPE_INT8: u8 = 3;
 pub const CMD_IDLE: u8 = 0;
 pub const CMD_FORWARD_PASS: u8 = 1;     // Nöral motordan tahmin isteği
 pub const CMD_EVALUATE_LOGITS: u8 = 2;  // Mantık kapısı doğrulama isteği
+pub const CMD_EXECUTE_TOOL: u8 = 3;     // YENİ: Sandbox'a eylem emri
 pub const CMD_HALT: u8 = 255;           // Sistemi durdur
 
 /// Bir Tensor'ün (Çok boyutlu matris) bellekte nerede olduğunu
