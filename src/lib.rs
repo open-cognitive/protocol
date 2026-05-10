@@ -37,16 +37,17 @@ pub struct TensorDescriptor {
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Pod, Zeroable)]
 pub struct CognitiveSignal {
-    pub command_type: u8,       // Hangi komut çalıştırılacak?
-    pub cognitive_state: u8,    // O anki ReAct durumu (1=Ingest, 2=Project vb.)
-    pub _padding1: [u8; 2],     // Hizalama
-    pub context_length: u32,    // Bağlamda (Context) kaç token var?
-    pub input_tensor: TensorDescriptor,  // Nöral motora giren veri
-    pub output_tensor: TensorDescriptor, // Nöral motorun üreteceği logitlerin yazılacağı adres
+    pub command_type: u8,
+    pub cognitive_state: u8,
+    pub _padding1: [u8; 2],
+    pub context_length: u32,
+    pub input_tensor: TensorDescriptor,
+    pub output_tensor: TensorDescriptor,
+    // YENİ EKLENEN: Modüller arası veri taşımak için 256 baytlık sabit bellek alanı
+    pub payload: [u8; 256], 
 }
 
 impl CognitiveSignal {
-    /// Yeni bir boş sinyal oluşturur
     pub fn new() -> Self {
         Self {
             command_type: CMD_IDLE,
@@ -55,6 +56,7 @@ impl CognitiveSignal {
             context_length: 0,
             input_tensor: TensorDescriptor::zeroed(),
             output_tensor: TensorDescriptor::zeroed(),
+            payload: [0; 256], // İçini sıfırlarla doldur
         }
     }
 }
