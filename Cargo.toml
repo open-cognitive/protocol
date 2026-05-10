@@ -8,3 +8,5 @@ description = "Zero-copy data structures for Open-Cognitive OS"
 # Serileştirme gerektirmeyen veri paketlemesi için
 # Derive makrolarını aktif ettik
 bytemuck = { version = "1.25.0", features = ["derive"] }
+# RAM (Bellek) yönetimi için işletim sistemi çağrıları
+memmap2 = "0.9.3"

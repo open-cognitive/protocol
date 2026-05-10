@@ -3,7 +3,7 @@
 //! Bu kütüphane, `neural-engine` ve `logic-gate-core` arasındaki veri alışverişini
 //! serileştirme (serialization) OLMADAN, doğrudan bellek (RAM) üzerinden
 //! yapmak için `repr(C)` standartlarında donanım uyumlu veri yapıları tanımlar.
-
+pub mod ipc;
 use bytemuck::{Pod, Zeroable};
 
 /// Sistemdeki veri tiplerini belirten sabitler
