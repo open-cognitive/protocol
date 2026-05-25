@@ -8,16 +8,15 @@ pub const DTYPE_F16: u8 = 1;
 pub const DTYPE_BF16: u8 = 2;
 pub const DTYPE_INT8: u8 = 3;
 
-// --- ÇEKİRDEK KOMUTLARI ---
 pub const CMD_IDLE: u8 = 0;
 pub const CMD_FORWARD_PASS: u8 = 1;     
 pub const CMD_EVALUATE_LOGITS: u8 = 2;  
 pub const CMD_EXECUTE_TOOL: u8 = 3;     
 pub const CMD_HALT: u8 = 255;           
 
-// --- WASM TOOL ID'LERİ ---
-pub const TOOL_SQUARE: u32 = 1;         // Sayı karesi alma aracı
-pub const TOOL_TEXT_PROCESS: u32 = 2;   // Metin işleme aracı
+pub const TOOL_SQUARE: u32 = 1;         
+pub const TOOL_TEXT_PROCESS: u32 = 2;   
+pub const TOOL_SYS_REPORT: u32 = 3;     // YENİ: Sistem Durum Raporlayıcı
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Pod, Zeroable)]
@@ -38,8 +37,8 @@ pub struct CognitiveSignal {
     pub context_length: u32,    
     pub input_tensor: TensorDescriptor,  
     pub output_tensor: TensorDescriptor, 
-    pub prompt_buffer: [u8; 512], // String/Metin girdisi
-    pub payload: [u8; 256],       // Zero-Copy araç parametreleri
+    pub prompt_buffer: [u8; 512], 
+    pub payload: [u8; 256],       
 }
 
 impl CognitiveSignal {
@@ -71,7 +70,6 @@ impl CognitiveSignal {
         String::from_utf8_lossy(&self.prompt_buffer[..end]).into_owned()
     }
 
-    // -- i64 (Sayısal) Araç Metotları --
     pub fn set_tool_call(&mut self, tool_id: u32, input: i64) {
         let id_bytes = tool_id.to_le_bytes();
         let input_bytes = input.to_le_bytes();
@@ -94,7 +92,6 @@ impl CognitiveSignal {
         i64::from_le_bytes(self.payload[12..20].try_into().unwrap())
     }
 
-    // -- Metin (String) Araç Metotları --
     pub fn set_tool_payload_string(&mut self, tool_id: u32, text: &str) {
         let id_bytes = tool_id.to_le_bytes();
         self.payload[0..4].copy_from_slice(&id_bytes);
