@@ -16,7 +16,7 @@ pub const CMD_HALT: u8 = 255;
 
 pub const TOOL_SQUARE: u32 = 1;         
 pub const TOOL_TEXT_PROCESS: u32 = 2;   
-pub const TOOL_SYS_REPORT: u32 = 3;     // YENİ: Sistem Durum Raporlayıcı
+pub const TOOL_SYS_REPORT: u32 = 3;     
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Pod, Zeroable)]
@@ -37,8 +37,8 @@ pub struct CognitiveSignal {
     pub context_length: u32,    
     pub input_tensor: TensorDescriptor,  
     pub output_tensor: TensorDescriptor, 
-    pub prompt_buffer: [u8; 512], 
-    pub payload: [u8; 256],       
+    pub prompt_buffer: [u8; 4096], // YÜKSELTİLDİ: 512 -> 4096 Byte
+    pub payload: [u8; 4096],       // YÜKSELTİLDİ: 256 -> 4096 Byte
 }
 
 impl CognitiveSignal {
@@ -50,21 +50,21 @@ impl CognitiveSignal {
             context_length: 0,
             input_tensor: TensorDescriptor::zeroed(),
             output_tensor: TensorDescriptor::zeroed(),
-            prompt_buffer: [0; 512],
-            payload: [0; 256],
+            prompt_buffer: [0; 4096],
+            payload: [0; 4096],
         }
     }
 
     pub fn set_prompt(&mut self, text: &str) {
         let bytes = text.as_bytes();
-        let len = bytes.len().min(511);
+        let len = bytes.len().min(4095);
         self.prompt_buffer[..len].copy_from_slice(&bytes[..len]);
         self.prompt_buffer[len] = 0;
     }
 
     pub fn get_prompt(&self) -> String {
         let mut end = 0;
-        while end < 512 && self.prompt_buffer[end] != 0 {
+        while end < 4096 && self.prompt_buffer[end] != 0 {
             end += 1;
         }
         String::from_utf8_lossy(&self.prompt_buffer[..end]).into_owned()
@@ -97,7 +97,7 @@ impl CognitiveSignal {
         self.payload[0..4].copy_from_slice(&id_bytes);
         
         let bytes = text.as_bytes();
-        let len = bytes.len().min(250);
+        let len = bytes.len().min(4090); // Güvenli sınır
         self.payload[4..4+len].copy_from_slice(&bytes[..len]);
         self.payload[4+len] = 0; 
     }
@@ -105,7 +105,7 @@ impl CognitiveSignal {
     pub fn get_tool_payload_string(&self) -> (u32, String) {
         let tool_id = u32::from_le_bytes(self.payload[0..4].try_into().unwrap());
         let mut end = 4;
-        while end < 256 && self.payload[end] != 0 {
+        while end < 4096 && self.payload[end] != 0 {
             end += 1;
         }
         let text = String::from_utf8_lossy(&self.payload[4..end]).into_owned();
