@@ -15,8 +15,9 @@ pub const CMD_EVALUATE_LOGITS: u8 = 2;
 pub const CMD_EXECUTE_TOOL: u8 = 3;     
 pub const CMD_HALT: u8 = 255;           
 
-// --- WASM TOOL ID'LERİ (Sistemdeki araçların donanım seviyesi karşılıkları) ---
-pub const TOOL_SQUARE: u32 = 1; // Parametrenin karesini alma aracı
+// --- WASM TOOL ID'LERİ ---
+pub const TOOL_SQUARE: u32 = 1;         // Sayı karesi alma aracı
+pub const TOOL_TEXT_PROCESS: u32 = 2;   // Metin işleme aracı
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Pod, Zeroable)]
@@ -37,8 +38,8 @@ pub struct CognitiveSignal {
     pub context_length: u32,    
     pub input_tensor: TensorDescriptor,  
     pub output_tensor: TensorDescriptor, 
-    pub prompt_buffer: [u8; 512], // String/Metin girdisi için C-String tamponu
-    pub payload: [u8; 256],       // Zero-Copy araç parametreleri ve sonuçları için alan
+    pub prompt_buffer: [u8; 512], // String/Metin girdisi
+    pub payload: [u8; 256],       // Zero-Copy araç parametreleri
 }
 
 impl CognitiveSignal {
@@ -55,17 +56,13 @@ impl CognitiveSignal {
         }
     }
 
-    /// String'i güvenli bir şekilde belleğe yazar
     pub fn set_prompt(&mut self, text: &str) {
         let bytes = text.as_bytes();
-        let len = bytes.len().min(512);
+        let len = bytes.len().min(511);
         self.prompt_buffer[..len].copy_from_slice(&bytes[..len]);
-        if len < 512 {
-            self.prompt_buffer[len] = 0; // C-style null terminator
-        }
+        self.prompt_buffer[len] = 0;
     }
 
-    /// Bellekteki metni okur
     pub fn get_prompt(&self) -> String {
         let mut end = 0;
         while end < 512 && self.prompt_buffer[end] != 0 {
@@ -74,29 +71,47 @@ impl CognitiveSignal {
         String::from_utf8_lossy(&self.prompt_buffer[..end]).into_owned()
     }
 
-    /// Aracın ID'sini (Tool ID) ve girdisini payload'a yazar (i64 destekli)
+    // -- i64 (Sayısal) Araç Metotları --
     pub fn set_tool_call(&mut self, tool_id: u32, input: i64) {
         let id_bytes = tool_id.to_le_bytes();
         let input_bytes = input.to_le_bytes();
         self.payload[0..4].copy_from_slice(&id_bytes);
-        self.payload[4..12].copy_from_slice(&input_bytes); // 8 byte
+        self.payload[4..12].copy_from_slice(&input_bytes);
     }
 
-    /// Payload'dan Tool ID ve girdisini donanım hızında okur.
     pub fn get_tool_call(&self) -> (u32, i64) {
         let tool_id = u32::from_le_bytes(self.payload[0..4].try_into().unwrap());
         let input = i64::from_le_bytes(self.payload[4..12].try_into().unwrap());
         (tool_id, input)
     }
 
-    /// Aracın WebAssembly Sandbox'ından dönen sonucunu payload'a kaydeder.
     pub fn set_tool_result(&mut self, result: i64) {
         let res_bytes = result.to_le_bytes();
-        self.payload[12..20].copy_from_slice(&res_bytes); // Sonraki 8 byte
+        self.payload[12..20].copy_from_slice(&res_bytes);
     }
 
-    /// Aracın ürettiği sonucu okur.
     pub fn get_tool_result(&self) -> i64 {
         i64::from_le_bytes(self.payload[12..20].try_into().unwrap())
+    }
+
+    // -- Metin (String) Araç Metotları --
+    pub fn set_tool_payload_string(&mut self, tool_id: u32, text: &str) {
+        let id_bytes = tool_id.to_le_bytes();
+        self.payload[0..4].copy_from_slice(&id_bytes);
+        
+        let bytes = text.as_bytes();
+        let len = bytes.len().min(250);
+        self.payload[4..4+len].copy_from_slice(&bytes[..len]);
+        self.payload[4+len] = 0; 
+    }
+
+    pub fn get_tool_payload_string(&self) -> (u32, String) {
+        let tool_id = u32::from_le_bytes(self.payload[0..4].try_into().unwrap());
+        let mut end = 4;
+        while end < 256 && self.payload[end] != 0 {
+            end += 1;
+        }
+        let text = String::from_utf8_lossy(&self.payload[4..end]).into_owned();
+        (tool_id, text)
     }
 }
