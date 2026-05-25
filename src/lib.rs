@@ -74,29 +74,29 @@ impl CognitiveSignal {
         String::from_utf8_lossy(&self.prompt_buffer[..end]).into_owned()
     }
 
-    /// Aracın ID'sini (Tool ID) ve girdisini payload'un ilk 8 baytına yazar.
-    pub fn set_tool_call(&mut self, tool_id: u32, input: i32) {
+    /// Aracın ID'sini (Tool ID) ve girdisini payload'a yazar (i64 destekli)
+    pub fn set_tool_call(&mut self, tool_id: u32, input: i64) {
         let id_bytes = tool_id.to_le_bytes();
         let input_bytes = input.to_le_bytes();
         self.payload[0..4].copy_from_slice(&id_bytes);
-        self.payload[4..8].copy_from_slice(&input_bytes);
+        self.payload[4..12].copy_from_slice(&input_bytes); // 8 byte
     }
 
     /// Payload'dan Tool ID ve girdisini donanım hızında okur.
-    pub fn get_tool_call(&self) -> (u32, i32) {
+    pub fn get_tool_call(&self) -> (u32, i64) {
         let tool_id = u32::from_le_bytes(self.payload[0..4].try_into().unwrap());
-        let input = i32::from_le_bytes(self.payload[4..8].try_into().unwrap());
+        let input = i64::from_le_bytes(self.payload[4..12].try_into().unwrap());
         (tool_id, input)
     }
 
     /// Aracın WebAssembly Sandbox'ından dönen sonucunu payload'a kaydeder.
-    pub fn set_tool_result(&mut self, result: i32) {
+    pub fn set_tool_result(&mut self, result: i64) {
         let res_bytes = result.to_le_bytes();
-        self.payload[8..12].copy_from_slice(&res_bytes);
+        self.payload[12..20].copy_from_slice(&res_bytes); // Sonraki 8 byte
     }
 
     /// Aracın ürettiği sonucu okur.
-    pub fn get_tool_result(&self) -> i32 {
-        i32::from_le_bytes(self.payload[8..12].try_into().unwrap())
+    pub fn get_tool_result(&self) -> i64 {
+        i64::from_le_bytes(self.payload[12..20].try_into().unwrap())
     }
 }
