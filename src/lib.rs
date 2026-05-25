@@ -17,7 +17,8 @@ pub const CMD_HALT: u8 = 255;
 pub const TOOL_SQUARE: u32 = 1;         
 pub const TOOL_TEXT_PROCESS: u32 = 2;   
 pub const TOOL_SYS_REPORT: u32 = 3;     
-pub const TOOL_READ_FILE: u32 = 4;      // YENİ: Dosya Sistemi Okuyucu Ajan
+pub const TOOL_READ_FILE: u32 = 4;      
+pub const TOOL_CLOCK: u32 = 5;          // YENİ: Zaman Algısı Aracı
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Pod, Zeroable)]
