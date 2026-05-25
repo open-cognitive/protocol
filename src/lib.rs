@@ -17,6 +17,7 @@ pub const CMD_HALT: u8 = 255;
 pub const TOOL_SQUARE: u32 = 1;         
 pub const TOOL_TEXT_PROCESS: u32 = 2;   
 pub const TOOL_SYS_REPORT: u32 = 3;     
+pub const TOOL_READ_FILE: u32 = 4;      // YENİ: Dosya Sistemi Okuyucu Ajan
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Pod, Zeroable)]
@@ -37,8 +38,8 @@ pub struct CognitiveSignal {
     pub context_length: u32,    
     pub input_tensor: TensorDescriptor,  
     pub output_tensor: TensorDescriptor, 
-    pub prompt_buffer: [u8; 4096], // YÜKSELTİLDİ: 512 -> 4096 Byte
-    pub payload: [u8; 4096],       // YÜKSELTİLDİ: 256 -> 4096 Byte
+    pub prompt_buffer: [u8; 4096], 
+    pub payload: [u8; 4096],       
 }
 
 impl CognitiveSignal {
@@ -97,7 +98,7 @@ impl CognitiveSignal {
         self.payload[0..4].copy_from_slice(&id_bytes);
         
         let bytes = text.as_bytes();
-        let len = bytes.len().min(4090); // Güvenli sınır
+        let len = bytes.len().min(4090); 
         self.payload[4..4+len].copy_from_slice(&bytes[..len]);
         self.payload[4+len] = 0; 
     }
